@@ -26,6 +26,9 @@ make test-cpu
 # Run GPU-only tests  
 make test-gpu
 # or: pytest -m gpu tests
+
+# Test VL SFT factory specifically
+python run_vl_tests.py
 ```
 
 ### Code Formatting and Linting
@@ -134,12 +137,35 @@ class CustomDataSource(DataSource):
 
 ### Configuration System
 Training recipes are YAML files with the following structure:
-- `type`: Trainer type (sft, dpo, custom)
+- `type`: Trainer type (sft, dpo, vl_sft, custom)
 - `model`: Model configuration (name_or_path, tokenizer settings)
 - `data`: Data sources and processing parameters
 - `checkpoint`: Checkpointing strategy (HuggingFace, DeepSpeed)
 - `optimizer`: Optimizer settings (AdamW, learning rate, etc.)
 - `scheduler`: Learning rate scheduler configuration
+
+### Vision-Language Training
+The `vl_sft` trainer enables training of vision-language models like LlavaNext:
+
+```yaml
+type: vl_sft
+model:
+  name_or_path: llava-hf/llava-v1.6-mistral-7b-hf
+data:
+  sources:
+    - your-vl-dataset
+  max_images_per_sample: 8
+  image_processing_batch_size: 1
+```
+
+**Data Formats Supported:**
+- Pre-tokenized: `input_ids`, `labels`, `images` columns
+- Messages: `messages`, `images` columns
+
+**Key Components:**
+- `VLSFTDataFactory`: Main factory for VL training
+- `VLSFTDataConfig`: Configuration with VL-specific parameters
+- `DataCollatorForVisionLanguageCausalLM`: Handles text + image batching
 
 ### Development Workflow
 1. Create training recipe YAML
