@@ -1,0 +1,47 @@
+type: spec-decode
+micro_batch_size: 12
+epochs: 5
+gen_train: true
+gen_micro_batch_size: 768
+gen_train_global_batch_size: 2048
+gen_train_micro_batch_size: 32
+train_iters: 3000
+model:
+  name_or_path: meta-llama/Llama-3.1-8B-Instruct
+  disable_activation_checkpoint: true
+tokenizer:
+  name_or_path: meta-llama/Llama-3.1-8B-Instruct
+deepspeed:
+  zero_optimization:
+    stage: 3
+    allgather_bucket_size: 500000000
+    stage3_param_persistence_threshold: 10000
+    stage3_max_live_parameters: 30000000
+    stage3_prefetch_bucket_size: 500000000
+    reduce_bucket_size: 250000000
+    memory_efficient_linear: false
+data:
+  sources:
+    - HuggingFaceH4/ultrachat_200k
+    - ise-uiuc/Magicoder-OSS-Instruct-75K
+  always_max_length: true
+  use_data_cache: true
+  cache_processed_data: true
+  cache_dir: /data/data-cache
+  num_proc: 16
+  max_length: 4096
+logger:
+  output_dir: "./"
+  file_output_ranks: [0]
+scheduler:
+  name: cosine
+  warmup_ratio: 0.05
+optimizer:
+  betas: [0.9,0.999]
+  weight_decay: 0.1
+  lr: 1e-3
+exit_iteration: 11
+checkpoint:
+  - type: deepspeed
+    save_every_n_steps: 10
+    output_dir: /data/spec-decode-llama-8b
