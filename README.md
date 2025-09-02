@@ -59,6 +59,41 @@ checkpoint:
 arctic_training path/to/sft-recipe.yaml
 ```
 
+## Vision-Language Training
+
+ArcticTraining supports vision-language models like LlavaNext through the `vl_sft` trainer. This enables training on datasets that contain both text and images:
+
+```yaml
+type: vl_sft
+micro_batch_size: 1
+model:
+  name_or_path: llava-hf/llava-v1.6-mistral-7b-hf
+data:
+  sources:
+    - your-vl-dataset  # Dataset with 'input_ids', 'labels', and 'images' columns
+  max_images_per_sample: 8
+  image_processing_batch_size: 1
+checkpoint:
+  - type: huggingface
+    save_end_of_training: true
+    output_dir: ./fine-tuned-vl-model
+```
+
+### Vision-Language Data Format
+
+The VL SFT factory supports two data formats:
+
+1. **Pre-tokenized format**: Dataset with `input_ids`, `labels`, and `images` columns
+   - `input_ids`: List of token IDs
+   - `labels`: List of label IDs (with -100 for masked tokens)  
+   - `images`: List of image file paths
+
+2. **Messages format**: Dataset with `messages` and `images` columns
+   - `messages`: List of conversation turns with role and content
+   - `images`: List of image file paths
+
+The VL SFT factory automatically handles image loading, processing, and batching alongside text tokens, making it easy to train vision-language models with mixed multimodal data.
+
 ## Customize Training
 
 To customize the training workflow, you can modify the training recipe YAML we

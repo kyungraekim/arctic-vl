@@ -35,6 +35,7 @@ from arctic_training.data.factory import DataFactory
 from arctic_training.data.hf_source import HFDataSource
 from arctic_training.data.sft_factory import SFTDataFactory
 from arctic_training.data.source import DataSource
+from arctic_training.data.vl_sft_factory import VLSFTDataFactory
 from arctic_training.logging import logger
 from arctic_training.model.factory import ModelFactory
 from arctic_training.model.hf_factory import HFModelFactory
