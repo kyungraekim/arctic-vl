@@ -23,7 +23,7 @@ make test
 make test-cpu
 # or: pytest -m "not gpu" tests
 
-# Run GPU-only tests  
+# Run GPU-only tests
 make test-gpu
 # or: pytest -m gpu tests
 
@@ -114,7 +114,7 @@ from arctic_training import SFTTrainer, register
 @register
 class CustomTrainer(SFTTrainer):
     name = "my_custom_trainer"
-    
+
     def loss(self, batch):
         # Custom loss implementation
         return loss
@@ -126,10 +126,10 @@ Extend data loading by implementing `DataSource` interface:
 ```python
 from arctic_training import DataSource, register
 
-@register  
+@register
 class CustomDataSource(DataSource):
     name = "my_data_source"
-    
+
     def load_data(self):
         # Custom data loading logic
         return dataset
@@ -153,14 +153,16 @@ model:
   name_or_path: llava-hf/llava-v1.6-mistral-7b-hf
 data:
   sources:
-    - your-vl-dataset
+    - your-vl-dataset      # VL dataset with images
+    - lmsys/lmsys-chat-1m  # Text dataset (no images)
   max_images_per_sample: 8
   image_processing_batch_size: 1
 ```
 
 **Data Formats Supported:**
-- Pre-tokenized: `input_ids`, `labels`, `images` columns
-- Messages: `messages`, `images` columns
+- Pre-tokenized: `input_ids`, `labels`, `images` columns (or `input_ids`, `labels` for text-only)
+- Messages: `messages`, `images` columns (or `messages` for text-only)
+- Text datasets: Any dataset with `messages` column (images column optional)
 
 **Key Components:**
 - `VLSFTDataFactory`: Main factory for VL training

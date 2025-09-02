@@ -125,9 +125,7 @@ class VLSFTDataConfig(SFTDataConfig):
     """ Batch size for image processing operations. """
 
 
-def pack_vl_sft_batch(
-    batch: Dict[str, List], max_length: int, always_max_length: bool
-) -> Dict[str, List]:
+def pack_vl_sft_batch(batch: Dict[str, List], max_length: int, always_max_length: bool) -> Dict[str, List]:
     """Pack vision-language SFT batch similar to text-only version but handling images."""
     keys = ("input_ids", "labels", "position_ids", "packed_sample_seqlens", "attention_mask", "images")
     packed_batch: Dict[str, List] = {k: [] for k in keys}
@@ -150,7 +148,10 @@ def pack_vl_sft_batch(
 
     # Pack multiple samples into one sample
     for input_ids, labels, attention_mask, images in zip(
-        batch["input_ids"], batch["labels"], batch["attention_mask"], batch.get("images", [[] for _ in batch["input_ids"]])
+        batch["input_ids"],
+        batch["labels"],
+        batch["attention_mask"],
+        batch.get("images", [[] for _ in batch["input_ids"]]),
     ):
         if should_flush():
             flush()
@@ -203,7 +204,7 @@ class VLSFTDataFactory(DataFactory):
     def processor(self) -> ProcessorMixin:
         """The processor object used by the Trainer for vision-language models."""
         # Assumes the trainer has a processor attribute for VL models
-        return getattr(self.trainer, 'processor', self.tokenizer)
+        return getattr(self.trainer, "processor", self.tokenizer)
 
     def process(self, dataset: DatasetType) -> DatasetType:
         """Process vision-language dataset with both text and image components."""
@@ -213,19 +214,20 @@ class VLSFTDataFactory(DataFactory):
         has_tokenized_data = all(col in dataset.column_names for col in required_columns[:2])
 
         if has_tokenized_data:
-            # Data is already tokenized, just ensure we have required columns
+            # Data is already tokenized, add empty images if not present
             if "images" not in dataset.column_names:
-                raise ValueError("Dataset must have 'images' column for VLSFTDataFactory with tokenized data.")
+                dataset = dataset.map(
+                    lambda example: {**example, "images": []},
+                    num_proc=self.config.num_proc,
+                    desc="Adding empty images column",
+                )
 
             # Add position_ids if not present
             if "position_ids" not in dataset.column_names:
                 dataset = dataset.map(
-                    lambda example: {
-                        **example,
-                        "position_ids": list(range(len(example["input_ids"])))
-                    },
+                    lambda example: {**example, "position_ids": list(range(len(example["input_ids"])))},
                     num_proc=self.config.num_proc,
-                    desc="Adding position_ids"
+                    desc="Adding position_ids",
                 )
 
             return dataset
@@ -234,8 +236,13 @@ class VLSFTDataFactory(DataFactory):
             if "messages" not in dataset.column_names:
                 raise ValueError("Dataset must have either ('input_ids', 'labels', 'images') or 'messages' columns.")
 
+            # Add empty images column if not present (for text-only datasets)
             if "images" not in dataset.column_names:
-                raise ValueError("Dataset must have 'images' column for VLSFTDataFactory.")
+                dataset = dataset.map(
+                    lambda example: {**example, "images": []},
+                    num_proc=self.config.num_proc,
+                    desc="Adding empty images column for text dataset",
+                )
 
             return dataset.map(
                 lambda ex: self.tokenize_vl_messages(
