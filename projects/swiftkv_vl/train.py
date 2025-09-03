@@ -33,7 +33,7 @@ class VLSwiftKVModelConfig(ModelConfig):
 
 class VLSwiftKVModelFactory(HFModelFactory):
     """Model factory for VL SwiftKV models."""
-    name = "vl_swiftkv"
+    name = "vl_swiftkv_model"
     config: VLSwiftKVModelConfig
 
     def post_create_config_callback(self, hf_config):

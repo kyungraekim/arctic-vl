@@ -100,6 +100,8 @@ ArcticTraining is a modular LLM post-training framework built on DeepSpeed with 
 The `projects/` directory contains specialized implementations:
 - `arctic_embed/`: Embedding model training
 - `swiftkv/`: Knowledge preserving compute reduction
+  - `models/llava_next/`: LlavaNext with SwiftKV integration
+- `swiftkv_vl/`: Vision-language SwiftKV training infrastructure
 - `arctic_lstm_speculator/`: Speculative decoding with LSTM
 - `sequence-parallelism/`: Sequence parallelism optimizations
 
@@ -168,6 +170,42 @@ data:
 - `VLSFTDataFactory`: Main factory for VL training
 - `VLSFTDataConfig`: Configuration with VL-specific parameters
 - `DataCollatorForVisionLanguageCausalLM`: Handles text + image batching
+
+### Vision-Language SwiftKV Training
+The `vl_swiftkv` trainer combines vision-language training with SwiftKV knowledge distillation:
+
+```yaml
+type: vl_swiftkv
+temperature: 2.0
+vision_loss_weight: 1.0
+text_loss_weight: 1.0
+model:
+  type: vl_swiftkv_model
+  name_or_path: projects.swiftkv.models.llava_next.create_small_llava_next_swiftkv_config
+  num_key_value_layers: 2
+  key_value_group_size: 1
+data:
+  type: vl_sft
+  sources:
+    - HuggingFaceM4/VQAv2      # Vision QA dataset
+    - lmsys/lmsys-chat-1m      # Text-only dataset for mixed training
+```
+
+**Key Features:**
+- Knowledge distillation between teacher (full) and student (SwiftKV) modes
+- Mixed modality training (vision-language + text-only batches)
+- MPS/CPU compatible for development and testing
+- Configurable temperature and loss weighting
+
+**Components:**
+- `VLSwiftKVTrainer`: Main trainer with distillation logic
+- `VLSwiftKVModelFactory`: Model factory for LlavaNext+SwiftKV models
+- `LlavaNextSwiftKVForConditionalGeneration`: SwiftKV-enabled LlavaNext model
+
+**Testing:**
+- Core functionality: `python projects/swiftkv_vl/test_vl_trainer.py`
+- MPS training: `python projects/swiftkv_vl/test_mps_training.py`
+- Integration: `python projects/swiftkv_vl/test_arctic_integration.py`
 
 ### Development Workflow
 1. Create training recipe YAML
